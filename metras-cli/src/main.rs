@@ -29,7 +29,6 @@ struct Args {
     user: String,
     #[arg(long)]
     pass: SecretString,
-
     #[arg(long, default_value = "30")]
     graceful_shutdown_s: u64,
 }
