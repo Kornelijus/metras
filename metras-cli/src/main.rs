@@ -9,8 +9,12 @@
 //! curl -v -x socks5h://127.0.0.1:62021 --proxy-user 'john:secret' https://www.example.com/
 //! ```
 
+mod monitored;
+
 use rama::{
-    net::user::Basic, proxy::socks5::Socks5Acceptor, tcp::server::TcpListener,
+    net::user::Basic,
+    proxy::socks5::{Socks5Acceptor, server::Connector},
+    tcp::server::TcpListener,
     telemetry::tracing::level_filters::LevelFilter,
 };
 use secrecy::{ExposeSecret, SecretString};
@@ -18,7 +22,7 @@ use secrecy::{ExposeSecret, SecretString};
 use std::time::Duration;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
-use clap::{Parser, command, arg};
+use clap::{Parser, arg, command};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -46,14 +50,18 @@ async fn main() {
         )
         .init();
 
-    let graceful = rama::graceful::Shutdown::default();
+    let monitored_stream = monitored::StreamForwardService::new();
+    let monitored_connector = Connector::default().with_service(monitored_stream);
 
+    let authorizer = Basic::new(args.user, args.pass.expose_secret()).into_authorizer();
+    let socks5_acceptor = Socks5Acceptor::new()
+        .with_connector(monitored_connector)
+        .with_authorizer(authorizer);
+
+    let graceful = rama::graceful::Shutdown::default();
     let tcp_service = TcpListener::bind(args.bind)
         .await
         .expect("bind proxy to port");
-
-    let authorizer = Basic::new(args.user, args.pass.expose_secret()).into_authorizer();
-    let socks5_acceptor = Socks5Acceptor::default().with_authorizer(authorizer);
 
     graceful.spawn_task_fn(|guard| tcp_service.serve_graceful(guard, socks5_acceptor));
 
