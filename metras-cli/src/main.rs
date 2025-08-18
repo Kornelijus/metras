@@ -13,6 +13,7 @@ use rama::{
     net::user::Basic, proxy::socks5::Socks5Acceptor, tcp::server::TcpListener,
     telemetry::tracing::level_filters::LevelFilter,
 };
+use secrecy::{ExposeSecret, SecretString};
 
 use std::time::Duration;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
@@ -27,7 +28,7 @@ struct Args {
     #[arg(long)]
     user: String,
     #[arg(long)]
-    pass: String,
+    pass: SecretString,
 
     #[arg(long, default_value = "30")]
     graceful_shutdown_s: u64,
@@ -52,7 +53,7 @@ async fn main() {
         .await
         .expect("bind proxy to port");
 
-    let authorizer = Basic::new(args.user.clone(), args.pass.clone()).into_authorizer();
+    let authorizer = Basic::new(args.user, args.pass.expose_secret()).into_authorizer();
     let socks5_acceptor = Socks5Acceptor::default().with_authorizer(authorizer);
 
     graceful.spawn_task_fn(|guard| tcp_service.serve_graceful(guard, socks5_acceptor));

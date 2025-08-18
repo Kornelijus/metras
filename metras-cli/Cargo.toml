@@ -6,5 +6,6 @@ edition = "2024"
 [dependencies]
 clap = { version = "4.5.45", features = ["derive"] }
 rama = { workspace = true, features = ["net", "proxy", "socks5", "tcp"] }
+secrecy = "0.10.3"
 tokio = "1.47.1"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
