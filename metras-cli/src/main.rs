@@ -28,6 +28,9 @@ struct Args {
     user: String,
     #[arg(long)]
     pass: String,
+
+    #[arg(long, default_value = "30")]
+    graceful_shutdown_s: u64,
 }
 
 #[tokio::main]
@@ -55,7 +58,7 @@ async fn main() {
     graceful.spawn_task_fn(|guard| tcp_service.serve_graceful(guard, socks5_acceptor));
 
     graceful
-        .shutdown_with_limit(Duration::from_secs(30))
+        .shutdown_with_limit(Duration::from_secs(args.graceful_shutdown_s))
         .await
         .expect("graceful shutdown");
 }
