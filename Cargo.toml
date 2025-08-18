@@ -1,6 +1,10 @@
 [workspace]
+resolver = "3"
 members = [
     "metras",
     "metras-cli",
     "metras-py"
 ]
+
+[workspace.dependencies]
+rama = { git = "https://github.com/plabayo/rama" }
