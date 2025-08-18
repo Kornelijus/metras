@@ -17,12 +17,23 @@ use rama::{
 use std::time::Duration;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
-const PROXY_SOCKS_ADDR: &str = "127.0.0.1:62021";
-const PROXY_SOCKS_USER: &str = "john";
-const PROXY_SOCKS_PASS: &str = "secret";
+use clap::{Parser, command, arg};
+
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    #[arg(long, default_value = "127.0.0.1:62021")]
+    bind: rama::net::address::SocketAddress,
+    #[arg(long)]
+    user: String,
+    #[arg(long)]
+    pass: String,
+}
 
 #[tokio::main]
 async fn main() {
+    let args = Args::parse();
+
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(
@@ -34,12 +45,13 @@ async fn main() {
 
     let graceful = rama::graceful::Shutdown::default();
 
-    let tcp_service = TcpListener::bind(PROXY_SOCKS_ADDR)
+    let tcp_service = TcpListener::bind(args.bind)
         .await
         .expect("bind proxy to port");
 
-    let socks5_acceptor = Socks5Acceptor::default()
-        .with_authorizer(Basic::new_static(PROXY_SOCKS_USER, PROXY_SOCKS_PASS).into_authorizer());
+    let authorizer = Basic::new(args.user.clone(), args.pass.clone()).into_authorizer();
+    let socks5_acceptor = Socks5Acceptor::default().with_authorizer(authorizer);
+
     graceful.spawn_task_fn(|guard| tcp_service.serve_graceful(guard, socks5_acceptor));
 
     graceful
