@@ -38,6 +38,10 @@ use rama::{
 use std::time::Duration;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
+const PROXY_SOCKS_ADDR: &str = "127.0.0.1:62021";
+const PROXY_SOCKS_USER: &str = "john";
+const PROXY_SOCKS_PASS: &str = "secret";
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::registry()
@@ -51,11 +55,12 @@ async fn main() {
 
     let graceful = rama::graceful::Shutdown::default();
 
-    let tcp_service = TcpListener::bind("127.0.0.1:62021")
+    let tcp_service = TcpListener::bind(PROXY_SOCKS_ADDR)
         .await
-        .expect("bind proxy to 127.0.0.1:62021");
+        .expect("bind proxy to port");
+
     let socks5_acceptor = Socks5Acceptor::default()
-        .with_authorizer(Basic::new_static("john", "secret").into_authorizer());
+        .with_authorizer(Basic::new_static(PROXY_SOCKS_USER, PROXY_SOCKS_PASS).into_authorizer());
     graceful.spawn_task_fn(|guard| tcp_service.serve_graceful(guard, socks5_acceptor));
 
     graceful
