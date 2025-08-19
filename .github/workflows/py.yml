@@ -21,6 +21,9 @@ permissions:
 jobs:
   linux:
     runs-on: ${{ matrix.platform.runner }}
+    defaults:
+      run:
+        working-directory: ./metras-py
     strategy:
       matrix:
         platform:
@@ -38,7 +41,6 @@ jobs:
             target: ppc64le
     steps:
       - uses: actions/checkout@v4
-      - run: cd metras-py
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -68,9 +70,11 @@ jobs:
             target: aarch64
           - runner: ubuntu-22.04
             target: armv7
+    defaults:
+      run:
+        working-directory: ./metras-py
     steps:
       - uses: actions/checkout@v4
-      - run: cd metras-py
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -96,9 +100,11 @@ jobs:
             target: x64
           - runner: windows-latest
             target: x86
+    defaults:
+      run:
+        working-directory: ./metras-py
     steps:
       - uses: actions/checkout@v4
-      - run: cd metras-py
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -124,9 +130,11 @@ jobs:
             target: x86_64
           - runner: macos-14
             target: aarch64
+    defaults:
+      run:
+        working-directory: ./metras-py
     steps:
       - uses: actions/checkout@v4
-      - run: cd metras-py
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -144,9 +152,11 @@ jobs:
 
   sdist:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./metras-py
     steps:
       - uses: actions/checkout@v4
-      - run: cd metras-py
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
@@ -170,8 +180,10 @@ jobs:
       contents: write
       # Used to generate artifact attestation
       attestations: write
+    defaults:
+      run:
+        working-directory: ./metras-py
     steps:
-      - run: cd metras-py
       - uses: actions/download-artifact@v4
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v2
