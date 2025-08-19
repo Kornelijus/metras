@@ -4,3 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+rama = { workspace = true }
+prost = { workspace = true }
+tokio = { workspace = true }
+secrecy = { workspace = true }
+base64 = { workspace = true }
+
+[build-dependencies]
+prost-build = { workspace = true }

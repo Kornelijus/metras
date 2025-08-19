@@ -1,14 +1,9 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod authorizer;
+pub mod monitored;
+pub mod payload;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+pub mod schemas {
+    pub mod proto {
+        include!(concat!(env!("OUT_DIR"), "/metras.rs"));
     }
 }

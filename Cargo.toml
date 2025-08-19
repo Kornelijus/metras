@@ -7,4 +7,9 @@ members = [
 ]
 
 [workspace.dependencies]
-rama = { git = "https://github.com/plabayo/rama" }
+rama = { git = "https://github.com/plabayo/rama", features = ["net", "proxy", "socks5", "tcp"] }
+prost = "0.14.1"
+prost-build = "0.14.1"
+tokio = "1.47.1"
+secrecy = "0.10.3"
+base64 = "0.22.1"
