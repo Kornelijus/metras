@@ -9,8 +9,6 @@
 //! curl -v -x socks5h://127.0.0.1:62021 --proxy-user 'john:secret' https://www.example.com/
 //! ```
 
-mod monitored;
-
 use rama::{
     net::user::Basic,
     proxy::socks5::{Socks5Acceptor, server::Connector},
@@ -50,7 +48,7 @@ async fn main() {
         )
         .init();
 
-    let monitored_stream = monitored::StreamForwardService::new();
+    let monitored_stream = metras::monitored::StreamForwardService::new();
     let monitored_connector = Connector::default().with_service(monitored_stream);
 
     let authorizer = Basic::new(args.user, args.pass.expose_secret()).into_authorizer();
