@@ -3,13 +3,12 @@
 #
 #    maturin generate-ci github
 #
-name: CI
+name: Python package
 
 on:
   push:
     branches:
       - main
-      - master
     tags:
       - '*'
   pull_request:
