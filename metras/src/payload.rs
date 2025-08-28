@@ -2,45 +2,69 @@ use base64::prelude::*;
 use prost::Message;
 use rama::{crypto::dep::x509_parser::nom::AsBytes, error::OpaqueError, net::user::Basic};
 use secrecy::SecretString;
+use thiserror::Error;
 
-pub struct CredentialPayload {
-    username: String,
-    password: SecretString,
+
+type HttpBasicCredentials = rama::net::user::Basic;
+
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("Missing HTTP basic auth credential")]
+    MissingCredential,
+    #[error("Invalid credential payload")]
+    InvalidCredentialPayload,
 }
 
-impl TryFrom<crate::schemas::proto::CredentialPayload> for CredentialPayload {
-    type Error = OpaqueError;
+pub struct Credential {
+    username: String,
+    payload: CredentialPayloadIn,
+}
 
-    fn try_from(value: crate::schemas::proto::CredentialPayload) -> Result<Self, Self::Error> {
+pub struct CredentialPayloadIn {
+    proxy_session_id: String,
+    upstream_proxy_url: SecretString,
+}
+
+impl TryFrom<&HttpBasicCredentials> for Credential {
+    type Error = self::Error;
+
+    fn try_from(value: &HttpBasicCredentials) -> Result<Self, Self::Error> {
+        let username = value.username();
+
+        let pass_payload_b64 = value.password().as_bytes();
+        let pass_payload_decoded = BASE64_URL_SAFE.decode(pass_payload_b64).map_err(|_| Error::InvalidCredentialPayload)?;
+        let payload_message = 
+            crate::schemas::proto::CredentialPayload::decode(pass_payload_decoded.as_bytes())
+                .map_err(|_| Error::InvalidCredentialPayload)?;
+
         Ok(Self {
-            username: value.username,
-            password: value.password.into(),
+            username: username.into(),
+            payload: CredentialPayloadIn::try_from(payload_message)?,
         })
     }
 }
 
-impl TryFrom<&str> for CredentialPayload {
-    type Error = OpaqueError;
+impl TryFrom<crate::schemas::proto::CredentialPayload> for CredentialPayloadIn {
+    type Error = self::Error;
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let mut payload = None;
-
-        {
-            let basic = Basic::try_from(value)?;
-            let pass_payload_b64 = basic.password().as_bytes();
-            let pass_payload_decoded = BASE64_URL_SAFE.decode(pass_payload_b64).unwrap();
-            payload = Some(
-                crate::schemas::proto::CredentialPayload::decode(pass_payload_decoded.as_bytes())
-                    .unwrap(),
-            );
+    fn try_from(value: crate::schemas::proto::CredentialPayload) -> Result<Self, Self::Error> {
+        if value.proxy_session_id.is_empty() || value.upstream_proxy_url.is_empty() {
+            return Err(Error::InvalidCredentialPayload);
         }
 
-        let payload = payload
-            .ok_or_else(|| OpaqueError::from_display("Failed to decode credential payload"))?;
-
         Ok(Self {
-            username: payload.username,
-            password: payload.password.into(),
+            proxy_session_id: value.proxy_session_id,
+            upstream_proxy_url: value.upstream_proxy_url.into(),
         })
+    }
+}
+
+impl TryFrom<&str> for Credential {
+    type Error = Error;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let basic = Basic::try_from(value).map_err(|_| Error::MissingCredential)?;
+        
+        Self::try_from(&basic)
     }
 }
