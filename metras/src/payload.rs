@@ -60,7 +60,7 @@ impl TryFrom<crate::proto::CredentialPayload> for CredentialPayloadIn {
 }
 
 impl TryFrom<&str> for Credential {
-    type Error = Error;
+    type Error = self::Error;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let basic = Basic::try_from(value).map_err(|_| Error::MissingCredential)?;
