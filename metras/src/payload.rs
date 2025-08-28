@@ -34,7 +34,7 @@ impl TryFrom<&HttpBasicCredentials> for Credential {
         let pass_payload_b64 = value.password().as_bytes();
         let pass_payload_decoded = BASE64_URL_SAFE.decode(pass_payload_b64).map_err(|_| Error::InvalidCredentialPayload)?;
         let payload_message = 
-            crate::schemas::proto::CredentialPayload::decode(pass_payload_decoded.as_bytes())
+            crate::proto::CredentialPayload::decode(pass_payload_decoded.as_bytes())
                 .map_err(|_| Error::InvalidCredentialPayload)?;
 
         Ok(Self {
@@ -44,10 +44,10 @@ impl TryFrom<&HttpBasicCredentials> for Credential {
     }
 }
 
-impl TryFrom<crate::schemas::proto::CredentialPayload> for CredentialPayloadIn {
+impl TryFrom<crate::proto::CredentialPayload> for CredentialPayloadIn {
     type Error = self::Error;
 
-    fn try_from(value: crate::schemas::proto::CredentialPayload) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::proto::CredentialPayload) -> Result<Self, Self::Error> {
         if value.proxy_session_id.is_empty() || value.upstream_proxy_url.is_empty() {
             return Err(Error::InvalidCredentialPayload);
         }
