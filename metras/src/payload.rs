@@ -1,6 +1,6 @@
 use base64::prelude::*;
 use prost::Message;
-use rama::{crypto::dep::x509_parser::nom::AsBytes, error::OpaqueError, net::user::Basic};
+use rama::{net::user::Basic};
 use secrecy::SecretString;
 use thiserror::Error;
 
@@ -34,7 +34,7 @@ impl TryFrom<&HttpBasicCredentials> for Credential {
         let pass_payload_b64 = value.password().as_bytes();
         let pass_payload_decoded = BASE64_URL_SAFE.decode(pass_payload_b64).map_err(|_| Error::InvalidCredentialPayload)?;
         let payload_message = 
-            crate::proto::CredentialPayload::decode(pass_payload_decoded.as_bytes())
+            crate::proto::CredentialPayload::decode(pass_payload_decoded.as_slice())
                 .map_err(|_| Error::InvalidCredentialPayload)?;
 
         Ok(Self {
